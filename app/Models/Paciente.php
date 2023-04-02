@@ -18,4 +18,23 @@ class Paciente extends Model
         'pac_cns',
     ];
 
+    public function regras()
+    {
+         $regras =[
+            'nome'=>'required|min:3',
+            'imagem'=>'required|file|mimes:png,doc,pdf,jpe',
+         ];
+         return $regras;
+    }
+
+    public function feedbacks(){
+
+         $feedbacks = [
+            'nome.unique'=>'Esse campo nome ja existe!',
+            'nome.min'=>'Esse campo exige minimo de 3 caracteres!',
+            'required'=>'O campo :attribute � obrigart�rio',
+         ];
+
+         return $feedbacks;
+    }
 }
