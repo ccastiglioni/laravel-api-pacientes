@@ -23,7 +23,6 @@ services:
             - redis
 
 
-
     # Database Server
     database:
         image: mysql:8.0
