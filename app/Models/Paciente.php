@@ -32,7 +32,7 @@ class Paciente extends Model
          $feedbacks = [
             'nome.unique'=>'Esse campo nome ja existe!',
             'nome.min'=>'Esse campo exige minimo de 3 caracteres!',
-            'required'=>'O campo :attribute � obrigart�rio',
+            'required'=>'O campo :attribute é obrigartorio',
          ];
 
          return $feedbacks;

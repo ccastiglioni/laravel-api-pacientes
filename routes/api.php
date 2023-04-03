@@ -17,3 +17,4 @@ use App\Http\Controllers\Api\PacienteController;
  */
 
  Route::apiResource('paciente', PacienteController::class);
+ Route::get('paciente/cep/{cep}', [PacienteController::class,'getCep']);

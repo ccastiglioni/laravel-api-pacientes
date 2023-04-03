@@ -3,9 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Endereco;
 use App\Models\Paciente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Cache;
+use GuzzleHttp\Client;
+
 
 
 class PacienteController extends Controller
@@ -26,18 +30,10 @@ class PacienteController extends Controller
             $paciente = collect();
 
             foreach($filtros as $key => $condicao) {
-
                 $c = explode(':', $condicao);
                 //print_r($c);
-                 //$paciente = $paciente->where($c[0], $c[1], $c[2]);
-                // $result = $this->paciente->where($c[0], $c[1], $c[2]);
-                //$paciente = $this->paciente->where('pac_nome_mae','like' ,'H%' );
-                //dd($paciente->get());
                 $result = $this->paciente->where($c[0], $c[1], $c[2])->get();
                 $paciente = $paciente->merge($result);
-
-                // Concatena os resultados na variável $paciente
-               // $paciente = $paciente->concat($result);
             }
 
         }else{
@@ -45,19 +41,13 @@ class PacienteController extends Controller
             //dd( $marca);
         }
 
-
         return response()->json($paciente,200);
     }
 
 
     public function store(Request $request)
     {
-
-        // $marca  = Paciente::create($request->all()); // Da pra fazer esse insert em massa MAS colocando o $fillable na Model
-
-        $name_img ='padrao.jpg';
-
-        //$request->validate($this->paciente->regras(), $this->paciente->feedbacks() );
+        $name_img = rand(0,1000).'padrao.jpg';
 
         if ($imagem = $request->file('pac_foto')) {
             $name_img =$imagem->store('imagens/paciente','public');
@@ -73,9 +63,26 @@ class PacienteController extends Controller
         ];
 
         $paciente  = $this->paciente->create($dadosbd);
+        $pacienteId = $paciente->id;
+
+        $enderecos = $request->get('enderecos');
+        foreach($enderecos as $enderecoData) {
+
+            $enderecoData['end_paciente_id'] = $pacienteId;
+            $endereco = new Endereco([
+                'end_cep' => $enderecoData['end_cep'],
+                'end_endereco' => $enderecoData['end_endereco'],
+                'end_numero' => $enderecoData['end_numero'],
+                'end_complemento' => $enderecoData['end_complemento'],
+                'end_bairro' => $enderecoData['end_bairro'],
+                'end_cidade' => $enderecoData['end_cidade'],
+            ]);
+            $paciente->enderecos()->save($endereco);
+        }
+
         $return = response()->json( $paciente , 201);
 
-        return $return; // Obs: o Laravel ja retorna um json_encode()
+        return $return;
     }
 
 
@@ -86,13 +93,12 @@ class PacienteController extends Controller
             'id' => 'required|exists:pacientes,id',
         ]);
 
-        // Verifica se há erros de validação
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Busca o paciente e retorna em formato JSON
         $paciente = Paciente::findOrFail($id);
+    //TESTAR com RELACIONAMENTO : $paciente = Paciente::with('enderecos')->findOrFail($id);
         return response()->json($paciente,200);
     }
 
@@ -113,7 +119,6 @@ class PacienteController extends Controller
             //percorrendo todas as regras definidas no Model
            /*  foreach($modelo->rules() as $input => $regra) {
 
-                //coletar apenas as regras aplicáveis aos parâmetros parciais da requisição PATCH
                 if(array_key_exists($input, $request->all())) {
                     $regrasDinamicas[$input] = $regra;
                 }
@@ -134,7 +139,6 @@ class PacienteController extends Controller
        // $imagem_urn = $imagem->store('imagens/modelos', 'public');
 
         $modelo->fill($request->all());
-       // $modelo->imagem = $imagem_urn;
         $modelo->save();
 
         return response()->json($modelo, 200);
@@ -143,20 +147,42 @@ class PacienteController extends Controller
 
     public function destroy($id)
     {
-        // Valida o ID do paciente
         $validator = Validator::make(['id' => $id], [
             'id' => 'required|exists:pacientes,id',
         ]);
 
-        // Verifica se há erros de validação
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Exclui o paciente
         $paciente = Paciente::findOrFail($id);
         $paciente->delete();
         return response()->json(['message' => "Paciente ID: {$id} removido com sucesso."]);
+    }
+
+    public function getCep($cep)
+    {
+        $arrCep =[];
+
+        if (Cache::has($cep)){
+            $arrCep = Cache::get($cep);
+            $arrCep['Cache'] = true;
+        }else{
+            $client = new Client();
+            $response = $client->get("https://viacep.com.br/ws/{$cep}/json/");
+            $endereco = json_decode($response->getBody());
+            $arrCep = [
+                'rua' => $endereco->logradouro,
+                'bairro' => $endereco->bairro,
+                'cidade' => $endereco->localidade,
+                'estado' => $endereco->uf,
+                'cep' => $endereco->cep,
+                'Cache'=>false
+            ];
+            Cache::put($cep, $arrCep, 30);
+        }
+
+        return $arrCep;
     }
 
 }
