@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Cache;
 use GuzzleHttp\Client;
 
 
-
 class PacienteController extends Controller
 {
 
@@ -22,6 +21,7 @@ class PacienteController extends Controller
 
     public function index(Request $request)
     {
+
         if($request->has('filtro')) {
 
             $filtros = $request->get('filtro');
@@ -36,6 +36,12 @@ class PacienteController extends Controller
                 $paciente = $paciente->merge($result);
             }
 
+        }elseif ($request->has('nome')) {
+            $paciente = $this->paciente->where('pac_nome', 'like', '%'.$request->get('nome').'%')->get();
+
+        }elseif ($request->has('cpf')) {
+            $paciente = $this->paciente->where('pac_cpf', $request->get('cpf'))->get();
+
         }else{
             $paciente = $this->paciente->get();
             //dd( $marca);
@@ -47,42 +53,32 @@ class PacienteController extends Controller
 
     public function store(Request $request)
     {
-        $name_img = rand(0,1000).'padrao.jpg';
+        try {
+            $name_img = rand(0,1000).'padrao.jpg';
 
-        if ($imagem = $request->file('pac_foto')) {
-            $name_img =$imagem->store('imagens/paciente','public');
+            $request->validate($this->paciente->regras(), $this->paciente->feedbacks());
+
+            $dadosbd = [
+                'pac_nome'   => $request->get('pac_nome'),
+                'pac_nome_mae'=> $request->get('pac_nome_mae'),
+                'pac_data'   => $request->get('pac_data'),
+                'pac_cpf'    => $request->get('pac_cpf'),
+                'pac_cns'    => $request->get('pac_cns'),
+                'pac_foto'   => $name_img
+            ];
+
+            $paciente = $this->paciente->create($dadosbd);
+
+            $enderecos = $request->get('endereco');
+
+            $paciente->enderecos()->create($enderecos);
+
+            $return = response()->json($paciente, 201);
+
+            return $return;
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['erro' => $e->getMessage()], 422);
         }
-
-        $dadosbd = [
-            'pac_nome'   => $request->get('pac_nome'),
-            'pac_nome_mae'=> $request->get('pac_nome_mae'),
-            'pac_data'   => $request->get('pac_data'),
-            'pac_cpf'    => $request->get('pac_cpf'),
-            'pac_cns'    => $request->get('pac_cns'),
-            'pac_foto'   => $name_img
-        ];
-
-        $paciente  = $this->paciente->create($dadosbd);
-        $pacienteId = $paciente->id;
-
-        $enderecos = $request->get('enderecos');
-        foreach($enderecos as $enderecoData) {
-
-            $enderecoData['end_paciente_id'] = $pacienteId;
-            $endereco = new Endereco([
-                'end_cep' => $enderecoData['end_cep'],
-                'end_endereco' => $enderecoData['end_endereco'],
-                'end_numero' => $enderecoData['end_numero'],
-                'end_complemento' => $enderecoData['end_complemento'],
-                'end_bairro' => $enderecoData['end_bairro'],
-                'end_cidade' => $enderecoData['end_cidade'],
-            ]);
-            $paciente->enderecos()->save($endereco);
-        }
-
-        $return = response()->json( $paciente , 201);
-
-        return $return;
     }
 
 
@@ -97,8 +93,7 @@ class PacienteController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $paciente = Paciente::findOrFail($id);
-    //TESTAR com RELACIONAMENTO : $paciente = Paciente::with('enderecos')->findOrFail($id);
+        $paciente = Paciente::with('enderecos')->findOrFail($id);
         return response()->json($paciente,200);
     }
 
@@ -106,42 +101,40 @@ class PacienteController extends Controller
 
     public function update(Request $request, $id)
     {
-        $modelo = $this->paciente->find($id);
 
-        if($modelo === null) {
-            return response()->json(['erro' => 'Impossível realizar a atualização. O recurso solicitado não existe'], 404);
-        }
+        try {
+            $paciente = $this->paciente->find($id);
 
-        if($request->method() === 'PATCH') {
+            if($paciente === null) {
+                return response()->json(['erro' => 'Impossível realizar a atualização. O recurso solicitado não existe'], 404);
+            }
 
-            $regrasDinamicas = array();
+            if($request->method() === 'PATCH') {
 
-            //percorrendo todas as regras definidas no Model
-           /*  foreach($modelo->rules() as $input => $regra) {
+                $regrasDinamicas = array();
 
-                if(array_key_exists($input, $request->all())) {
-                    $regrasDinamicas[$input] = $regra;
+                //percorrendo todas as regras definidas no Model
+                 foreach($paciente->regras() as $input => $regra) {
+
+                    if(array_key_exists($input, $request->all())) {
+                        $regrasDinamicas[$input] = $regra;
+                    }
                 }
-            } */
 
-            //$request->validate($regrasDinamicas);
+                $request->validate($regrasDinamicas, $paciente->feedbacks());
 
-        } else {
-            $request->validate($modelo->rules());
+            } else {
+                $request->validate($paciente->regras(), $paciente->feedbacks());
+            }
+
+            $paciente->fill($request->all());
+            $paciente->save();
+
+            return response()->json($paciente, 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['erro' => $e->getMessage()], 422);
         }
-
-        //remove o arquivo antigo caso um novo arquivo tenha sido enviado no request
-        if($request->file('imagem')) {
-            Storage::disk('public')->delete($modelo->imagem);
-        }
-
-        $imagem = $request->file('imagem');
-       // $imagem_urn = $imagem->store('imagens/modelos', 'public');
-
-        $modelo->fill($request->all());
-        $modelo->save();
-
-        return response()->json($modelo, 200);
     }
 
 
@@ -179,7 +172,7 @@ class PacienteController extends Controller
                 'cep' => $endereco->cep,
                 'Cache'=>false
             ];
-            Cache::put($cep, $arrCep, 30);
+            Cache::put($cep, $arrCep, 15);
         }
 
         return $arrCep;

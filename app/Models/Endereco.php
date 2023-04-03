@@ -17,6 +17,7 @@ class Endereco extends Model
         'end_complemento',
         'end_bairro',
         'end_cidade',
+        'end_estado',
     ];
 
     public function paciente()

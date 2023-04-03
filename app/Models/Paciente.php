@@ -21,8 +21,9 @@ class Paciente extends Model
     public function regras()
     {
          $regras =[
-            'nome'=>'required|min:3',
-            'imagem'=>'required|file|mimes:png,doc,pdf,jpe',
+            'pac_nome'=>'required|min:4',
+            'pac_cpf'=>'required|unique:pacientes',
+            'pac_foto'=>'required|min:8',
          ];
          return $regras;
     }
@@ -30,11 +31,18 @@ class Paciente extends Model
     public function feedbacks(){
 
          $feedbacks = [
-            'nome.unique'=>'Esse campo nome ja existe!',
-            'nome.min'=>'Esse campo exige minimo de 3 caracteres!',
+            'pac_cpf.unique'=>'CPF já existe, cadastre outro por favor!',
+            'pac_nome.unique'=>'Esse Nome de paciente já existe!',
+            'pac_nome.min'=>'O campo Nome exige minimo de 3 caracteres!',
             'required'=>'O campo :attribute é obrigartorio',
          ];
 
          return $feedbacks;
+    }
+
+    public function enderecos()
+    {
+                        //< Relacionamento > , <Chave Estrangeira> , <Chave Primaria>
+        return $this->hasMany(Endereco::class,'end_paciente_id'    ,'id');
     }
 }

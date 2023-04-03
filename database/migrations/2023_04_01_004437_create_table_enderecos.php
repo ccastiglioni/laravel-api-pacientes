@@ -8,7 +8,6 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     *
      * @return void
      */
     public function up()
@@ -23,14 +22,11 @@ return new class extends Migration
             $table->string('end_complemento');
             $table->string('end_bairro');
             $table->string('end_cidade');
+            $table->string('end_estado');
+            $table->nullableTimestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('enderecos');
