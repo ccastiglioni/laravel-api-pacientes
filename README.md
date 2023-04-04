@@ -1,9 +1,9 @@
-## Descrição como Rodar:
+# Descrição como Rodar:
 - 1 dar um stop no apache e mysql da maquina local
 - 2 docker compose build
 - 3 docker compose up -d 
-- 4  
-
+- 4 Logo ao subir o Projeto em http://localhost:8000/ estão as Instrições para Rodar a Migrate,As Seeders e a Factory
+- 5 Depois é só usar O Insomnia para fazer os testes.
 
 ## Requisitos
 

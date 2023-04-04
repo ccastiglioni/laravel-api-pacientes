@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\MigrationController;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,5 +16,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('index');
 });
+
+Route::get('/run_migration', [MigrationController::class,'run']);
+
+Route::get('/run_seeder', [MigrationController::class,'runSeeder']);
+
+Route::get('/run_factory', [MigrationController::class,'runFactory']);
