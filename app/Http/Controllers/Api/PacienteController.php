@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ImportacaoPacientes;
 use App\Models\Endereco;
 use App\Models\Paciente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Cache;
 use GuzzleHttp\Client;
-
+use Illuminate\Support\Facades\Storage;
 
 class PacienteController extends Controller
 {
@@ -44,7 +45,6 @@ class PacienteController extends Controller
 
         }else{
             $paciente = $this->paciente->get();
-            //dd( $marca);
         }
 
         return response()->json($paciente,200);
@@ -84,7 +84,6 @@ class PacienteController extends Controller
 
     public function show($id)
     {
-        // Valida o ID do paciente
         $validator = Validator::make(['id' => $id], [
             'id' => 'required|exists:pacientes,id',
         ]);
@@ -176,6 +175,31 @@ class PacienteController extends Controller
         }
 
         return $arrCep;
+    }
+
+
+
+    public function importar(Request $request)
+    {
+        //dd($request);
+        $validated = $request->validate([
+            'arquivo' => 'required|mimes:csv,txt',
+        ]);
+
+        $file = $validated['arquivo'];
+
+        $path = Storage::putFile('csv', $file);
+
+        if (!$path) {
+            throw ValidationException::withMessages([
+                'arquivo' => 'Could not upload file.',
+            ]);
+        }
+            //print_r($path);
+
+        ImportacaoPacientes::dispatch($path);
+
+        return response()->json(['message' => 'Importing data from CSV file.']);
     }
 
 }

@@ -4,7 +4,7 @@
 - 3 docker compose up -d 
 - 4 Logo ao subir o Projeto em http://localhost:8000/ estão as Instrições para Rodar a Migrate,As Seeders e a Factory
 - 5 Depois é só usar O Insomnia para fazer os testes.
-
+- OBS : o arquivo para testar o .csv está em no root :arquivo_importacao.csv
 ## Requisitos
 
 Sua aplicação deve:
