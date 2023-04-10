@@ -15,12 +15,12 @@ class ImportacaoPacientesJobProcessor
         $csvData = array_map('str_getcsv', file($data['path']));
 
          // Remove header row
-        $header = array_shift($csvData);
+        $csvData = array_shift($csvData);
 
         try {
         foreach ($csvData as $row) {
 
-            print_r($row);
+            //print_r($row);
 
             $paciente = new Paciente();
             $paciente->pac_foto = $row[0];
