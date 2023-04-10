@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PacienteController;
+use App\Jobs\SendJob;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,3 +21,8 @@ use App\Http\Controllers\Api\PacienteController;
  Route::get('paciente/cep/{cep}', [PacienteController::class,'getCep']);
 
  Route::post('pacientes/importar', [PacienteController::class, 'importar']);
+
+ Route::get('/job',function (){
+    SendJob::dispatch();
+    return view('index');
+ });

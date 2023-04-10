@@ -181,13 +181,13 @@ class PacienteController extends Controller
 
     public function importar(Request $request)
     {
-        //dd($request);
+
         $validated = $request->validate([
             'arquivo' => 'required|mimes:csv,txt',
         ]);
 
         $file = $validated['arquivo'];
-
+        // retorna o caminho completo do arquivo que fez Upload
         $path = Storage::putFile('csv', $file);
 
         if (!$path) {
@@ -195,11 +195,10 @@ class PacienteController extends Controller
                 'arquivo' => 'Could not upload file.',
             ]);
         }
-            //print_r($path);
 
-        ImportacaoPacientes::dispatch($path);
+        ImportacaoPacientes::dispatch($path)->delay(now()->addSeconds(15));
 
-        return response()->json(['message' => 'Importing data from CSV file.']);
+        return response()->json(['message' => 'Importing data from CSV file. file: (' . $path. ')']);
     }
 
 }

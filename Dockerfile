@@ -4,6 +4,9 @@ RUN apt-get update -y
 RUN apt-get install -y unzip libpq-dev libcurl4-gnutls-dev vim
 RUN docker-php-ext-install pdo pdo_mysql bcmath
 
+RUN docker-php-ext-install pcntl
+RUN echo "extension=pcntl.so" >> /usr/local/etc/php/conf.d/docker-php-ext-pcntl.ini
+
 RUN pecl install -o -f redis \
     && rm -rf /tmp/pear \
     && docker-php-ext-enable redis
